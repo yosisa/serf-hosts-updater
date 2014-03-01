@@ -2,12 +2,19 @@ package main
 
 import (
 	"bufio"
+	"github.com/voxelbrain/goptions"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"strings"
 )
 
 const HOSTS_FILE = "/etc/hosts"
+
+type CmdOptions struct {
+	Dnsmasq       bool `goptions:"--dnsmasq, description='Send SIGHUP to dnsmasq'"`
+	goptions.Help `goptions:"-h, --help, description='Show this help'"`
+}
 
 type Event struct {
 	name    string
@@ -62,7 +69,14 @@ func removeEntry(entries []string, host string) []string {
 	return result
 }
 
+func sendSIGHUP(name string) {
+	exec.Command("pkill", "-HUP", name).Run()
+}
+
 func main() {
+	options := CmdOptions{}
+	goptions.ParseAndFail(&options)
+
 	event := os.Getenv("SERF_EVENT")
 	if !(event == "member-join" || event == "member-leave" || event == "member-failed") {
 		os.Exit(1)
@@ -84,4 +98,8 @@ func main() {
 
 	data := strings.Join(entries, "\n")
 	ioutil.WriteFile(HOSTS_FILE, []byte(data+"\n"), 0644)
+
+	if options.Dnsmasq {
+		sendSIGHUP("dnsmasq")
+	}
 }
