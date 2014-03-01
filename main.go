@@ -9,7 +9,10 @@ import (
 	"strings"
 )
 
-const HOSTS_FILE = "/etc/hosts"
+const (
+	HOSTS_FILE = "/etc/hosts"
+	PKILL      = "/usr/bin/pkill"
+)
 
 var reloadDnsmasq = flag.Bool("dnsmasq", false, "Send SIGHUP to dnsmasq")
 
@@ -67,7 +70,7 @@ func removeEntry(entries []string, host string) []string {
 }
 
 func sendSIGHUP(name string) {
-	exec.Command("pkill", "-HUP", name).Run()
+	exec.Command(PKILL, "-HUP", name).Run()
 }
 
 func main() {
