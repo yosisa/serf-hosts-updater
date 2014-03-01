@@ -2,7 +2,7 @@ package main
 
 import (
 	"bufio"
-	"github.com/voxelbrain/goptions"
+	"flag"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -11,10 +11,7 @@ import (
 
 const HOSTS_FILE = "/etc/hosts"
 
-type CmdOptions struct {
-	Dnsmasq       bool `goptions:"--dnsmasq, description='Send SIGHUP to dnsmasq'"`
-	goptions.Help `goptions:"-h, --help, description='Show this help'"`
-}
+var reloadDnsmasq = flag.Bool("dnsmasq", false, "Send SIGHUP to dnsmasq")
 
 type Event struct {
 	name    string
@@ -74,8 +71,7 @@ func sendSIGHUP(name string) {
 }
 
 func main() {
-	options := CmdOptions{}
-	goptions.ParseAndFail(&options)
+	flag.Parse()
 
 	event := os.Getenv("SERF_EVENT")
 	if !(event == "member-join" || event == "member-leave" || event == "member-failed") {
@@ -99,7 +95,7 @@ func main() {
 	data := strings.Join(entries, "\n")
 	ioutil.WriteFile(HOSTS_FILE, []byte(data+"\n"), 0644)
 
-	if options.Dnsmasq {
+	if *reloadDnsmasq {
 		sendSIGHUP("dnsmasq")
 	}
 }
